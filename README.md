@@ -1,1 +1,1 @@
-# cs245-database
+# MICROdb

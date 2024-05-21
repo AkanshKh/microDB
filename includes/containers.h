@@ -4,23 +4,24 @@
 #define COLUMN_EMAIL_SIZE 255
 #define TABLE_MAX_PAGES 100
 
-typedef struct {
+struct Row {
     uint32_t id;
-    char username[COLUMN_USERNAME_SIZE];
-    char email[COLUMN_EMAIL_SIZE];
-} Row;
+    char username[COLUMN_USERNAME_SIZE + 1];
+    char email[COLUMN_EMAIL_SIZE + 1];
+};
 
 template <typename Struct, typename AttributeType>
-size_t size_of_attribute(AttributeType Struct::* attribute) {
-    return sizeof(attribute);
+const size_t size_of_attribute(AttributeType Struct::* attribute) {
+    return sizeof(AttributeType);
 }
 
 const uint32_t ID_SIZE = size_of_attribute(&Row::id);
 const uint32_t USERNAME_SIZE = size_of_attribute(&Row::username);
 const uint32_t EMAIL_SIZE = size_of_attribute(&Row::email);
 
-const uint32_t ID_OFFSET = 0;
-const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;
+
+const uint32_t ID_OFFSET = 0; 
+const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE; 
 const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;
 const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
 

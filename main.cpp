@@ -3,7 +3,7 @@
 using namespace std;
 
 int main(int argc,char* argv[]){
-
+    
     Table* table = new_table();
 
     InputBuffer* input_buffer = new_input_buffer();

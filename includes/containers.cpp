@@ -31,10 +31,15 @@ void read_input(InputBuffer& input_buffer){
     // Remove the newline character 
     input_buffer.buffer_length = bytes_read - 1;
     input_buffer.buffer[bytes_read - 1] = 0;
-    // std::cout<<input_buffer->buffer<<" "<<input_buffer->buffer_length<<std::endl;
+
+    // std::cout<<input_buffer.buffer<<" "<<input_buffer.buffer_length<<std::endl;
 }
 
 MetaCommandResult do_meta_ccommand(InputBuffer& input_buffer, Table& table){
+
+    // std::cout<<input_buffer.buffer<<std::endl;
+    // std::cout<<strcmp(input_buffer.buffer,".exit")<<std::endl;
+
     if(strcmp(input_buffer.buffer,".exit") == 0){
         close_input_buffer(input_buffer);
         free_table(table);
@@ -53,6 +58,11 @@ PrepareResult prepare_statement(InputBuffer& input_buffer, Statement& statement)
     if(strncmp(input_buffer.buffer, "insert", 6) == 0){
         statement.type = STATEMENT_INSERT;
         int args_assigned = sscanf(input_buffer.buffer, "insert %d %s %s", &statement.row_to_insert.id, statement.row_to_insert.username, statement.row_to_insert.email);
+
+        // std::cout<<statement.row_to_insert.id<<std::endl;
+        // std::cout<<statement.row_to_insert.username<<std::endl;
+        // std::cout<<statement.row_to_insert.email<<std::endl;
+
 
         if(args_assigned < 3){
             return PREPARE_SYNTAX_ERROR;
@@ -89,7 +99,8 @@ void* row_slot(Table& table, uint32_t row_num){
 
     uint32_t row_offset = row_num % ROWS_PER_PAGE;
     uint32_t byte_offset = row_offset * ROW_SIZE;
-
+    // std::cout<<page<<std::endl;
+    // std::cout<<byte_offset<<std::endl;
     return page + byte_offset;
 }
 

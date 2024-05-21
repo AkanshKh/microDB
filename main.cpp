@@ -3,8 +3,17 @@
 using namespace std;
 
 int main(int argc,char* argv[]){
-    
-    Table* table = new_table();
+
+    if(argc < 2){
+        std::cout<<"Must supply a database filename. \n";
+        exit(EXIT_FAILURE);
+    }
+
+    char* filename = argv[1];
+
+    Table* table = db_open(filename);
+
+    std::cout<<table->num_rows<<std::endl;
 
     InputBuffer* input_buffer = new_input_buffer();
 

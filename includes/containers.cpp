@@ -1,4 +1,8 @@
 #include <bits/stdc++.h>
+#include <fcntl.h> 
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "containers.h"
 
 InputBuffer* new_input_buffer() {
@@ -42,7 +46,7 @@ MetaCommandResult do_meta_ccommand(InputBuffer& input_buffer, Table& table){
 
     if(strcmp(input_buffer.buffer,".exit") == 0){
         close_input_buffer(input_buffer);
-        free_table(table);
+        db_close(table);
         exit(EXIT_SUCCESS);
     }
     else if(strcmp(input_buffer.buffer,".clear") == 0){
@@ -107,13 +111,41 @@ void deserialize_row(void* source, Row& destination){
     memcpy(&destination.email, source + EMAIL_OFFSET, EMAIL_SIZE);
 }
 
+void* get_page(Pager& pager, uint32_t page_num){
+
+    if(page_num > TABLE_MAX_PAGES){
+        std::cout<<"Tried to fetch page that is out of bounds\n";
+        exit(EXIT_FAILURE);
+    }
+
+    if(pager.pages[page_num] == nullptr){
+        void* page = malloc(PAGE_SIZE);
+        uint32_t num_pages = pager.file_length;
+        
+        if(pager.file_length % PAGE_SIZE){
+            num_pages++;
+        }
+
+        if(page_num <= num_pages){
+            lseek(pager.file_descriptor , page_num * PAGE_SIZE , SEEK_SET);
+            ssize_t bytes_read = read(pager.file_descriptor , page , PAGE_SIZE);
+
+            if(bytes_read == -1){
+                std::cout<<"Error reading the file\n";
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        pager.pages[page_num] = page;
+    }
+
+    return pager.pages[page_num];
+}
+
 void* row_slot(Table& table, uint32_t row_num){
     uint32_t page_num = row_num / ROWS_PER_PAGE;
-    void* page = table.pages[page_num];
 
-    if(page == NULL){
-        page = table.pages[page_num] = malloc(PAGE_SIZE);
-    }
+    void* page = get_page(*table.pager, page_num);
 
     uint32_t row_offset = row_num % ROWS_PER_PAGE;
     uint32_t byte_offset = row_offset * ROW_SIZE;
@@ -160,21 +192,103 @@ ExecuteResult execute_statement(Statement& statement, Table& table){
     std::cout<<"GAY GAY"<<std::endl;
 }
 
-Table* new_table(){
-    Table* table = new Table;
+Table* db_open(const char* filename){
 
-    table->num_rows = 0;
-    for(uint32_t i = 0; i < TABLE_MAX_PAGES; i ++){
-        table->pages[i] = nullptr;
-    }
+    Pager* pager = pager_open(filename);
+    uint32_t num_rows = pager->file_length;
+
+    Table* table = new Table;
+    table->pager = pager;
+    table->num_rows = num_rows;
 
     return table;
 }
 
-void free_table(Table& table){
-    for(uint32_t i = 0; i < table.num_rows; i ++){
-        free(table.pages[i]);
+Pager* pager_open(const char* filename){
+
+    int fd = open(filename, O_RDWR | O_CREAT, S_IWUSR | S_IRUSR);
+
+    if(fd == -1){
+        std::cout<<"Unable to locate the file\n";
+        exit(EXIT_FAILURE);
     }
 
+    off_t file_length = lseek(fd, 0, SEEK_END);
+
+    Pager* pager = new Pager;
+    
+    pager->file_descriptor = fd;
+    pager->file_length = file_length;
+
+    for(uint32_t i = 0; i < TABLE_MAX_PAGES; i ++){
+        pager->pages[i] = nullptr;
+    }
+
+    return pager;
+}
+
+void pager_flush(Pager& pager , uint32_t page_num , uint32_t size){
+    
+    if(pager.pages[page_num] == nullptr){
+        std::cout<<"Tried to flush null page\n";
+        exit(EXIT_FAILURE);
+    }
+
+    off_t offset = lseek(pager.file_descriptor , page_num * PAGE_SIZE , SEEK_SET);
+
+    if(offset == -1){
+        std::cout<<"Error seeking the file : "<<errno<<std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    ssize_t bytes_written = write(pager.file_descriptor , pager.pages[page_num] , size);
+
+    if(bytes_written == -1){
+        std::cout<<"Error writing to the file : "<<errno<<std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+
+void db_close(Table& table){
+    Pager* pager = table.pager;
+    uint32_t num_full_pages = table.num_rows / ROWS_PER_PAGE;
+
+    for(uint32_t i = 0; i < num_full_pages; i ++){
+        if(pager->pages[i] == nullptr){
+            continue;
+        }
+
+        pager_flush(*pager , i , PAGE_SIZE);
+        free(pager->pages[i]);
+        pager->pages[i] = nullptr;
+    }
+
+    uint32_t num_additional_rows = table.num_rows % ROWS_PER_PAGE;
+
+    if(num_additional_rows > 0){
+        uint32_t page_num = num_full_pages;
+        if(pager->pages[page_num] != nullptr){
+            pager_flush(*pager , page_num , num_additional_rows * ROW_SIZE);
+            free(pager->pages[page_num]);
+            pager->pages[page_num] = nullptr;
+        }
+    }
+
+    int res = close(pager->file_descriptor);
+
+    if(res == -1){
+        std::cout<<"Error closing the file\n";
+        exit(EXIT_FAILURE);
+    }
+
+    for(uint32_t i = 0; i < TABLE_MAX_PAGES; i ++){
+        void* page = pager->pages[i];
+        if(page){
+            free(page);
+            pager->pages[i] = nullptr;
+        }
+    }
+
+    free(pager);
     free(&table);
 }

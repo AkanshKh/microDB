@@ -66,13 +66,19 @@ typedef struct {
 } Statement;
 
 typedef struct {
-    uint32_t num_rows;
+    int file_descriptor;
+    uint32_t file_length;
     void* pages[TABLE_MAX_PAGES];
+} Pager;
+
+typedef struct {
+    Pager* pager;
+    uint32_t num_rows;
 } Table;
 
-void print_prompt();
-
 InputBuffer* new_input_buffer();
+
+void print_prompt();
 
 void close_input_buffer(InputBuffer&);
 
@@ -88,7 +94,11 @@ void serialize_row(Row& , void*);
 
 void deserialize_row(void* , Row&);
 
+void* get_page(Pager& , uint32_t);
+
 void* row_slot(Table& , uint32_t);
+
+void print_row(Row&);
 
 ExecuteResult execute_insert(Statement& , Table&);
 
@@ -96,6 +106,10 @@ ExecuteResult execute_select(Statement& , Table&);
 
 ExecuteResult execute_statement(Statement& , Table&);
 
-Table* new_table();
+Table* db_open(const char* filename);
 
-void free_table(Table&);
+Pager* pager_open(const char* filename);
+
+void pager_flush(Pager& , uint32_t , uint32_t);
+
+void db_close(Table&);

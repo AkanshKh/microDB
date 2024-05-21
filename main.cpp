@@ -32,6 +32,9 @@ int main(int argc,char* argv[]){
             std::cout<<"Cannot parse the query due to syntax errors\n";
             continue;
         }
+        if(prepared == PREPARE_STRING_TOO_LONG){
+            std::cout<<"Given stuff is toooo long dear\n";
+        }
         if(prepared == PREPARE_UNRECOGNIZED_STATEMENT){
             std::cout<<"Unrecognized Command initials "<<input_buffer->buffer<<std::endl;
             continue;

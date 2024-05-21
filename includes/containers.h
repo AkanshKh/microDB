@@ -38,6 +38,7 @@ typedef enum {
 typedef enum{
     PREPARE_SUCCESS,
     PREPARE_SYNTAX_ERROR,
+    PREPARE_STRING_TOO_LONG,
     PREPARE_UNRECOGNIZED_STATEMENT 
 } PrepareResult;
 
@@ -78,6 +79,8 @@ void close_input_buffer(InputBuffer&);
 void read_input(InputBuffer&);
 
 MetaCommandResult do_meta_ccommand(InputBuffer& , Table&);
+
+PrepareResult prepare_insert(InputBuffer& , Statement&);
 
 PrepareResult prepare_statement(InputBuffer& , Statement&);
 

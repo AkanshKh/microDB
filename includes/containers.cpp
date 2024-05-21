@@ -40,6 +40,10 @@ MetaCommandResult do_meta_ccommand(InputBuffer& input_buffer, Table& table){
         free_table(table);
         exit(EXIT_SUCCESS);
     }
+    else if(strcmp(input_buffer.buffer,".clear") == 0){
+        system("clear");
+        return META_COMMAND_SUCCESS;
+    }
     else{
         return META_COMMAND_UNRECOGNIZED_COMMAND;
     }
@@ -48,7 +52,7 @@ MetaCommandResult do_meta_ccommand(InputBuffer& input_buffer, Table& table){
 PrepareResult prepare_statement(InputBuffer& input_buffer, Statement& statement){
     if(strncmp(input_buffer.buffer, "insert", 6) == 0){
         statement.type = STATEMENT_INSERT;
-        int args_assigned = sscanf(input_buffer.buffer, "insert %u %s %s", statement.row_to_insert.id, statement.row_to_insert.username, statement.row_to_insert.email);
+        int args_assigned = sscanf(input_buffer.buffer, "insert %d %s %s", &statement.row_to_insert.id, statement.row_to_insert.username, statement.row_to_insert.email);
 
         if(args_assigned < 3){
             return PREPARE_SYNTAX_ERROR;

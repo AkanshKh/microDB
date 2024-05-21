@@ -16,7 +16,6 @@ int main(int argc,char* argv[]){
             MetaCommandResult got = do_meta_ccommand(*input_buffer, *table);
 
             if(got == META_COMMAND_SUCCESS){
-                std::cout<<"Successfully Executed"<<std::endl;
                 continue;
             }
             if(got == META_COMMAND_UNRECOGNIZED_COMMAND){

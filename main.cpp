@@ -13,7 +13,7 @@ int main(int argc,char* argv[]){
 
     Table* table = db_open(filename);
 
-    std::cout<<table->num_rows<<std::endl;
+    // std::cout<<table->num_rows<<std::endl;
 
     InputBuffer* input_buffer = new_input_buffer();
 
@@ -57,5 +57,7 @@ int main(int argc,char* argv[]){
         if(executed == EXECUTE_TABLE_FULL){
             std::cout<<"TABLE IS FULL GAY MAN\n";
         }
+
+        // std::cout<<"For the input buffer : "<<input_buffer->buffer<<" number of rows are : "<<table->num_rows<<std::endl;
     }
 }   

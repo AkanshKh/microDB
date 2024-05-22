@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 
-#define COLUMN_USERNAME_SIZE 32
+#define COLUMN_USERNAME_SIZE 31
 #define COLUMN_EMAIL_SIZE 255
 #define TABLE_MAX_PAGES 100
 
@@ -110,6 +110,6 @@ Table* db_open(const char* filename);
 
 Pager* pager_open(const char* filename);
 
-void pager_flush(Pager& , uint32_t , uint32_t);
+void pager_flush(Pager &, uint32_t, uint32_t);
 
-void db_close(Table&);
+void db_close(Table &);

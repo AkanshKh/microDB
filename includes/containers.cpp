@@ -89,6 +89,7 @@ PrepareResult prepare_insert(InputBuffer& input_buffer, Statement& statement){
 
 PrepareResult prepare_statement(InputBuffer& input_buffer, Statement& statement){
     if(strncmp(input_buffer.buffer, "insert", 6) == 0){
+        statement.type = STATEMENT_INSERT;
         return prepare_insert(input_buffer, statement);
     }
     if(strcmp(input_buffer.buffer, "select") == 0){
@@ -166,7 +167,9 @@ ExecuteResult execute_insert(Statement& statement, Table& table){
     Row* row_to_insert = &statement.row_to_insert;
 
     serialize_row(*row_to_insert, row_slot(table,table.num_rows));
+    // std::cout<<table.num_rows<<std::endl;
     table.num_rows++;
+    // std::cout<<table.num_rows<<std::endl;
 
     return EXECUTE_SUCCESS;
 }
@@ -195,7 +198,7 @@ ExecuteResult execute_statement(Statement& statement, Table& table){
 Table* db_open(const char* filename){
 
     Pager* pager = pager_open(filename);
-    uint32_t num_rows = pager->file_length;
+    uint32_t num_rows = (pager->file_length) / ROW_SIZE;
 
     Table* table = new Table;
     table->pager = pager;
@@ -235,6 +238,7 @@ void pager_flush(Pager& pager , uint32_t page_num , uint32_t size){
     }
 
     off_t offset = lseek(pager.file_descriptor , page_num * PAGE_SIZE , SEEK_SET);
+    // std::cout<<"Offset is : "<<offset<<std::endl;
 
     if(offset == -1){
         std::cout<<"Error seeking the file : "<<errno<<std::endl;
@@ -242,6 +246,8 @@ void pager_flush(Pager& pager , uint32_t page_num , uint32_t size){
     }
 
     ssize_t bytes_written = write(pager.file_descriptor , pager.pages[page_num] , size);
+
+    // std::cout<<"Size is : "<<size<<std::endl;
 
     if(bytes_written == -1){
         std::cout<<"Error writing to the file : "<<errno<<std::endl;
@@ -252,18 +258,20 @@ void pager_flush(Pager& pager , uint32_t page_num , uint32_t size){
 void db_close(Table& table){
     Pager* pager = table.pager;
     uint32_t num_full_pages = table.num_rows / ROWS_PER_PAGE;
+    // std::cout<<table.num_rows<<std::endl;
+    // std::cout<<num_full_pages<<std::endl;
 
     for(uint32_t i = 0; i < num_full_pages; i ++){
         if(pager->pages[i] == nullptr){
             continue;
         }
-
         pager_flush(*pager , i , PAGE_SIZE);
         free(pager->pages[i]);
         pager->pages[i] = nullptr;
     }
 
     uint32_t num_additional_rows = table.num_rows % ROWS_PER_PAGE;
+    // std::cout<<num_additional_rows<<std::endl;
 
     if(num_additional_rows > 0){
         uint32_t page_num = num_full_pages;

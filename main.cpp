@@ -4,6 +4,8 @@ using namespace std;
 
 int main(int argc,char* argv[]){
 
+    // signal(SIGINT, signalHandler);
+
     if(argc < 2){
         std::cout<<"Must supply a database filename. \n";
         exit(EXIT_FAILURE);

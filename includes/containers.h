@@ -76,6 +76,12 @@ typedef struct {
     uint32_t num_rows;
 } Table;
 
+typedef struct {
+    Table* table;
+    uint32_t row_num;
+    bool end_of_table;
+} Cursor;
+
 InputBuffer* new_input_buffer();
 
 void print_prompt();
@@ -96,7 +102,7 @@ void deserialize_row(void* , Row&);
 
 void* get_page(Pager& , uint32_t);
 
-void* row_slot(Table& , uint32_t);
+void* cursor_value(Cursor&);
 
 void print_row(Row&);
 
@@ -113,3 +119,11 @@ Pager* pager_open(const char* filename);
 void pager_flush(Pager &, uint32_t, uint32_t);
 
 void db_close(Table &);
+
+// void signalHandler();
+
+Cursor* table_start(Table&);
+
+Cursor* table_end(Table&);
+
+void cursor_advance(Cursor&);

@@ -56,6 +56,9 @@ int main(int argc,char* argv[]){
         if(executed == EXECUTE_SUCCESS){
             std::cout<<"SUCCESSSSSSSSSS HEHE YOU GAY\n";
         }
+        if(executed == EXECUTE_DUPLICATE_KEY){
+            std::cout<<"DUPLICATE KEY dedi madarchod"<<std::endl;
+        }
         if(executed == EXECUTE_TABLE_FULL){
             std::cout<<"TABLE IS FULL GAY MAN\n";
         }

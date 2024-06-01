@@ -36,7 +36,7 @@ void read_input(InputBuffer& input_buffer){
     input_buffer.buffer_length = bytes_read - 1;
     input_buffer.buffer[bytes_read - 1] = 0;
 
-    // std::cout<<input_buffer.buffer<<" "<<input_buffer.buffer_length<<std::endl;
+    std::cout<<input_buffer.buffer<<" "<<input_buffer.buffer_length<<std::endl;
 }
 
 MetaCommandResult do_meta_ccommand(InputBuffer& input_buffer, Table& table){
@@ -545,6 +545,7 @@ uint32_t* internal_node_cell(void* node, uint32_t cell_num) {
 uint32_t* internal_node_child(void* node, uint32_t child_num){
     uint32_t num_keys = *internal_node_num_keys(node);
     if(child_num > num_keys){
+        std::cout<<"1\n";
         std::cout<<"Tried to access child_num > num_keys\n";
         exit(EXIT_FAILURE);
     }
@@ -552,7 +553,8 @@ uint32_t* internal_node_child(void* node, uint32_t child_num){
         // return internal_node_right_child(node);
         uint32_t* right_child = internal_node_right_child(node);
         if(*right_child == INVALID_PAGE_NUM){
-            std::cout<<"Tried to access child_num > num_keys\n";
+            std::cout<<"2\n";
+            std::cout<<"Tried to access child_num > num_keys\n";//throwing error now
             exit(EXIT_FAILURE);
         }
         return right_child;
@@ -560,6 +562,7 @@ uint32_t* internal_node_child(void* node, uint32_t child_num){
     else{
         uint32_t* child = internal_node_cell(node, child_num);
         if(*child==INVALID_PAGE_NUM){
+            std::cout<<"3\n";
             std::cout<<"Tried to access child_num > num_keys\n";
             exit(EXIT_FAILURE);
         }
@@ -695,7 +698,7 @@ uint32_t internal_node_find_child(void* node,uint32_t key){
 
 void internal_node_split_and_insert(Table& table, uint32_t parent_page_num, uint32_t child_page_num){
     uint32_t old_page_num = parent_page_num;
-    void* old_node = get_page(*table.pager, old_page_num);
+    void* old_node = get_page(*table.pager, parent_page_num);
     uint32_t old_max = get_node_max_key(*table.pager,old_node);
 
     void* child = get_page(*table.pager, child_page_num);
@@ -726,7 +729,7 @@ void internal_node_split_and_insert(Table& table, uint32_t parent_page_num, uint
     *node_parent(cur) = new_page_num;
     *internal_node_right_child(old_node) = INVALID_PAGE_NUM;
 
-    for(int i=INTERNAL_NODE_MAX_CELLS; i> INTERNAL_NODE_MAX_CELLS/2; i--){
+    for(int i=INTERNAL_NODE_MAX_CELLS-1; i> INTERNAL_NODE_MAX_CELLS/2; i--){
         cur_page_num = *internal_node_child(old_node, i);
         cur = get_page(*table.pager, cur_page_num);
         internal_node_insert(table,new_page_num,cur_page_num);
@@ -741,7 +744,7 @@ void internal_node_split_and_insert(Table& table, uint32_t parent_page_num, uint
     uint32_t max_after_split = get_node_max_key(*table.pager,old_node);
     uint32_t destination_page_num =child_max < max_after_split ? old_page_num : new_page_num;
 
-    internal_node_insert(table, parent_page_num, child_page_num);
+    internal_node_insert(table, destination_page_num, child_page_num);
     *node_parent(child) = destination_page_num;
 
     update_internal_node_key(parent, old_max, get_node_max_key(*table.pager,old_node));

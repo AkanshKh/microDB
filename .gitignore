@@ -1,4 +1,5 @@
-main.o
-includes/containers.o
 tot
-mydb.db
+*.db
+*.o
+*.exe
+*.out

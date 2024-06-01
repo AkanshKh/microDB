@@ -3,6 +3,7 @@
 #define COLUMN_USERNAME_SIZE 31
 #define COLUMN_EMAIL_SIZE 255
 #define TABLE_MAX_PAGES 100
+#define INVALID_PAGE_NUM UINT32_MAX
 
 struct Row {
     uint32_t id;
@@ -182,7 +183,8 @@ uint32_t* internal_node_cell(void*, uint32_t);
 uint32_t* internal_node_child(void*, uint32_t);
 uint32_t* internal_node_key(void*, uint32_t);
 void update_internal_node_key(void*, uint32_t, uint32_t);
-uint32_t get_node_max_key(void*);
+uint32_t get_node_max_key(Pager&,void*);
+// uint32_t get_node_max_key(void*);
 bool is_node_root(void*);
 void set_node_root(void*, bool);
 void initialize_internal_node(void*);
@@ -191,3 +193,4 @@ void print_tree(Pager&, uint32_t, uint32_t);
 Cursor* internal_node_find(Table&, uint32_t,uint32_t);
 uint32_t internal_node_find_child(void*,uint32_t);
 void internal_node_insert(Table&, uint32_t, uint32_t);
+void internal_node_split_and_insert(Table&, uint32_t, uint32_t);

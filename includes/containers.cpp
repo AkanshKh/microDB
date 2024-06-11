@@ -5,56 +5,31 @@
 #include <sys/stat.h>
 #include "containers.h"
 
-InputBuffer* new_input_buffer() {
-    InputBuffer* input_buffer = new InputBuffer;
-    input_buffer->buffer = NULL;
-    input_buffer->buffer_length = 0;
-    input_buffer->input_length = 0;
+// InputBuffer* new_input_buffer() {
+//     InputBuffer* input_buffer = new InputBuffer;
+//     input_buffer->buffer = NULL;
+//     input_buffer->buffer_length = 0;
+//     input_buffer->input_length = 0;
 
-    return input_buffer;
-}
+//     return input_buffer;
+// }
 
 void print_prompt(){
     std::cout<<"db > ";
 }
 
-void close_input_buffer(InputBuffer& input_buffer) {
-    free(input_buffer.buffer);
-    free(&input_buffer);
-}
+MetaCommandResult do_meta_ccommand(const std::string& input_buffer, Table& table){
 
-void read_input(InputBuffer& input_buffer){
-    ssize_t bytes_read = getline(&(input_buffer.buffer),&(input_buffer.buffer_length),stdin);
-
-    if(bytes_read <= 0){
-        std::cout<<"Error reading input\n";
-        exit(EXIT_FAILURE);
-    }
-
-
-    // Remove the newline character 
-    input_buffer.buffer_length = bytes_read - 1;
-    input_buffer.buffer[bytes_read - 1] = 0;
-
-    std::cout<<input_buffer.buffer<<" "<<input_buffer.buffer_length<<std::endl;
-}
-
-MetaCommandResult do_meta_ccommand(InputBuffer& input_buffer, Table& table){
-
-    // std::cout<<input_buffer.buffer<<std::endl;
-    // std::cout<<strcmp(input_buffer.buffer,".exit")<<std::endl;
-
-    if(strcmp(input_buffer.buffer , ".exit") == 0){
-        close_input_buffer(input_buffer);
+    if(input_buffer==".exit"){
         db_close(table);
         exit(EXIT_SUCCESS);
     }
-    else if(strcmp(input_buffer.buffer, ".btree") == 0){
+    else if(input_buffer==".btree"){
         std::cout<<"Tree :\n";
         print_tree(*table.pager, 0, 0);
         return META_COMMAND_SUCCESS;
     }
-    else if(strcmp(input_buffer.buffer , ".clear") == 0){
+    else if(input_buffer==".clear"){
         system("clear");
         return META_COMMAND_SUCCESS;
     }
@@ -63,43 +38,56 @@ MetaCommandResult do_meta_ccommand(InputBuffer& input_buffer, Table& table){
     }
 }
 
-PrepareResult prepare_insert(InputBuffer& input_buffer, Statement& statement){
+PrepareResult prepare_insert(const std::string& input_buffer, Statement& statement){
 
-    char* keyword = strtok(input_buffer.buffer, " ");
-    char* id_string = strtok(NULL, " ");
-    char* username = strtok(NULL, " ");
-    char* email = strtok(NULL, " ");
+    std::istringstream raw_cmd(input_buffer);
+    std::string keyword,id_string,username,email;
+    raw_cmd>>keyword>>id_string>>username>>email;
 
-    if(id_string == NULL || username == NULL || email == NULL){
+
+
+    if(id_string == "" || username == "" || email == ""){
         return PREPARE_SYNTAX_ERROR;
     }
 
-    int id = atoi(id_string);
+    int id = stoi(id_string);
 
-    if(strlen(id_string) > COLUMN_USERNAME_SIZE){
+    if(username.size() > COLUMN_USERNAME_SIZE){
         return PREPARE_STRING_TOO_LONG;
     }
 
-    if(strlen(id_string) > COLUMN_EMAIL_SIZE){
+    if(email.size() > COLUMN_EMAIL_SIZE){
         return PREPARE_STRING_TOO_LONG;
     }
 
     statement.row_to_insert.id = id;
-    strcpy(statement.row_to_insert.username, username);
-    strcpy(statement.row_to_insert.email, email);
+    strcpy(statement.row_to_insert.username, username.c_str());
+    strcpy(statement.row_to_insert.email, email.c_str());
 
     return PREPARE_SUCCESS;
 
 }
 
-PrepareResult prepare_statement(InputBuffer& input_buffer, Statement& statement){
-    if(strncmp(input_buffer.buffer, "insert", 6) == 0){
+PrepareResult prepare_statement(const std::string& input_buffer, Statement& statement){
+    if(input_buffer.substr(0,15)=="create database"){
+        //creates new database file, do later
+    }
+    if(input_buffer.substr(0,12)=="create table"){
+        //create new table
+        statement.type =STATEMENT_CREATE;
+        // return prepare_create(input_buffer,statement);
+    }
+    if(input_buffer.substr(0,6)=="insert"){
         statement.type = STATEMENT_INSERT;
         return prepare_insert(input_buffer, statement);
     }
-    if(strcmp(input_buffer.buffer, "select") == 0){
+    if(input_buffer.substr(0,6)=="select"){
         statement.type = STATEMENT_SELECT;
         return PREPARE_SUCCESS;
+    }
+    if(input_buffer.substr(0,6)=="delete"){
+        statement.type = STATEMENT_DELETE;
+        // return prepare_delete(input_buffer,statement);
     }
 
     return PREPARE_UNRECOGNIZED_STATEMENT;
@@ -225,7 +213,7 @@ Table* db_open(const char* filename){
     table->root_page_num = 0;
 
     if(pager->num_pages == 0){
-        void* root_node = get_page(*pager, 0);
+        void* root_node = get_page(*pager, 0);//
         initialize_leaf_node(root_node);
         set_node_root(root_node, true);
     }

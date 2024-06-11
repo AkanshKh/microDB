@@ -17,27 +17,29 @@ int main(int argc,char* argv[]){
 
     // std::cout<<table->num_rows<<std::endl;
 
-    InputBuffer* input_buffer = new_input_buffer();
+    // InputBuffer* input_buffer = new_input_buffer();
+    std::string input_buffer;
 
     while(true){
         print_prompt();
-        read_input(*input_buffer);
+        // read_input(*input_buffer);
+        std::getline(std::cin,input_buffer);
 
-        if(input_buffer->buffer[0] == '.'){
-            MetaCommandResult got = do_meta_ccommand(*input_buffer, *table);
+        if(input_buffer[0] == '.'){
+            MetaCommandResult got = do_meta_ccommand(input_buffer, *table);
 
             if(got == META_COMMAND_SUCCESS){
                 continue;
             }
             if(got == META_COMMAND_UNRECOGNIZED_COMMAND){
-                std::cout<<"Unrecognized Command "<<input_buffer->buffer<<std::endl;
+                std::cout<<"Unrecognized Command "<<input_buffer<<std::endl;
                 continue;
             }
         }
 
         Statement statement;
 
-        PrepareResult prepared = prepare_statement(*input_buffer,statement);
+        PrepareResult prepared = prepare_statement(input_buffer,statement);
 
         if(prepared == PREPARE_SYNTAX_ERROR){
             std::cout<<"Cannot parse the query due to syntax errors\n";
@@ -47,7 +49,7 @@ int main(int argc,char* argv[]){
             std::cout<<"Given stuff is toooo long dear\n";
         }
         if(prepared == PREPARE_UNRECOGNIZED_STATEMENT){
-            std::cout<<"Unrecognized Command initials "<<input_buffer->buffer<<std::endl;
+            std::cout<<"Unrecognized Command initials "<<input_buffer<<std::endl;
             continue;
         }
 

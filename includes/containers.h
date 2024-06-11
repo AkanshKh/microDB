@@ -80,72 +80,78 @@ const uint32_t INTERNAL_NODE_MAX_CELLS = 3;//update it later
 
 
 
-typedef enum {
+enum MetaCommandResult{
     META_COMMAND_SUCCESS,
     META_COMMAND_UNRECOGNIZED_COMMAND
-} MetaCommandResult;
+};
 
-typedef enum{
+enum PrepareResult{
     PREPARE_SUCCESS,
     PREPARE_SYNTAX_ERROR,
     PREPARE_STRING_TOO_LONG,
     PREPARE_UNRECOGNIZED_STATEMENT 
-} PrepareResult;
+};
 
-typedef enum {
+enum StatementType{
+    STATEMENT_CREATE,
     STATEMENT_INSERT,
-    STATEMENT_SELECT 
-} StatementType;
+    STATEMENT_SELECT ,
+    STATEMENT_DELETE
+};
 
-typedef enum {
+enum ExecuteResult{
     EXECUTE_SUCCESS,
     EXECUTE_TABLE_FULL ,
     EXECUTE_DUPLICATE_KEY
-} ExecuteResult;
+};
 
-typedef enum {
+enum NodeType{
     NODE_INTERNAL,
     NODE_LEAF
-} NodeType;
+};
 
-typedef struct {
-    char* buffer;
-    size_t buffer_length;
-    ssize_t input_length;
-} InputBuffer;
+// typedef struct {
+//     char* buffer;
+//     size_t buffer_length;
+//     ssize_t input_length;
+// } InputBuffer;
 
-typedef struct {
+struct Statement{
     StatementType type;
     Row row_to_insert;
-} Statement;
+};
 
-typedef struct {
+struct Pager {
     int file_descriptor;
     uint32_t num_pages;
     uint32_t file_length;
     void* pages[TABLE_MAX_PAGES];
-} Pager;
+};
 
-typedef struct {
+struct Table{
     Pager* pager;
     uint32_t root_page_num;
-} Table;
+};
 
-typedef struct {
+struct Cursor{
     Table* table;
     uint32_t page_num;
     uint32_t cell_num;
     bool end_of_table;
-} Cursor;
+};
 
 // forward declarations
-InputBuffer* new_input_buffer();
+// InputBuffer* new_input_buffer();
 void print_prompt();
-void close_input_buffer(InputBuffer&);
-void read_input(InputBuffer&);
-MetaCommandResult do_meta_ccommand(InputBuffer& , Table&);
-PrepareResult prepare_insert(InputBuffer& , Statement&);
-PrepareResult prepare_statement(InputBuffer& , Statement&);
+// void close_input_buffer(InputBuffer&);
+// void read_input(InputBuffer&);
+MetaCommandResult do_meta_ccommand(const std::string& , Table&);
+PrepareResult prepare_statement(const std::string& , Statement&);
+PrepareResult prepare_insert(const std::string& , Statement&);
+
+// PrepareResult prepare_create(const std::string& , Statement&);
+// PrepareResult prepare_delete(const std::string& , Statement&);
+
 void serialize_row(Row& , void*);
 void deserialize_row(void* , Row&);
 void* get_page(Pager& , uint32_t);

@@ -1,4 +1,6 @@
-main.o
-includes/containers.o
+.vscode/
 tot
-mydb.db
+*.db
+*.o
+*.exe
+*.out

@@ -19,6 +19,7 @@ struct Table {
 };
 
 struct PageHeader {
+    size_t num_rows;
     size_t next_page;
 };
 
@@ -36,7 +37,7 @@ class Database{
         size_t next_free_page_;
         void PrintTable(std::string& table_name);  
         bool ParseInsertSQL(std::string sql, std::string& table_name, std::vector<std::string>& values);
-        bool ParseSelectSQL(std::string sql, std::string& table_name, std::vector<std::string>& columns);
+        bool ParseSelectSQL(std::string sql, std::string& table_name, std::vector<std::string>& columns, bool& all);
 
     public:
         std::unordered_map<std::string, Table> tables;
@@ -44,8 +45,8 @@ class Database{
         ~Database();
         bool CreateTable(std::string& sql);
         bool InsertIntoTable(std::string sql);
-        bool SelectFromTable(std::string sql);
-
+        bool SelectFromTable(std::string sql, bool all);
+        bool ShowTables();
 }; 
 
 #endif // MAIN_H

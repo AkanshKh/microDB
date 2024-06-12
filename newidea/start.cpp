@@ -35,7 +35,10 @@ int main(int argc,char* argv[]){
             db.InsertIntoTable(sql);
         }
         if(sql.substr(0, 6) == "SELECT"){
-            db.SelectFromTable(sql);
+            db.SelectFromTable(sql, 0);
+        }
+        if(sql == "SHOW TABLES;"){
+            db.ShowTables();
         }
     }
 

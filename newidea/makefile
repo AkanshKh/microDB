@@ -22,4 +22,5 @@ start.o: start.cpp
 
 clean:
 	@rm -f $(OBJS) $(TARGET)
+	@rm -f heh.txt
 	@echo "Cleared"

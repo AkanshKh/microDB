@@ -12,7 +12,6 @@ Database::Database(const std::string &filename){
 Database::~Database(){
     SaveMetaData();
     for(auto& table_data : tables){
-        // std::cout<<table_data.first<<std::endl;
         SaveTableData(table_data.second);
     }
     file_st.close();
@@ -31,6 +30,8 @@ void Database::PrintTable(std::string &table_name){
         std::cout<<column.name<<"\t";
     }
     std::cout<<std::endl;
+
+    // std::cout<<table.rows.size()<<std::endl;
 
     for(auto& row : table.rows){
         for(auto& val : row){
@@ -53,14 +54,10 @@ bool Database::CreateTable(std::string& sql){
         return false;
     }
 
-    size_t start_page = 1;
-    // for(const auto& table_data : tables){
-    //     start_page += table_data.second.num_pages;
-    // }
 
+    next_free_page_ ++;
     table.start_page = next_free_page_;
     table.last_page = next_free_page_;
-    next_free_page_ ++;
     table.num_pages = 0;
     table.row_size = 0;
     for(const auto& column : table.columns){
@@ -136,14 +133,14 @@ bool Database::InsertIntoTable(std::string sql){
 
     size_t rows_per_page = (PAGE_SIZE - sizeof(PageHeader)) / table.row_size;
 
-    if(!table.rows.empty() && table.rows.size() % rows_per_page == 0){
+    if(!table.rows.empty() && (table.rows.size() % rows_per_page) == 0){
         table.last_page = next_free_page_;
         next_free_page_ ++;
         table.num_pages ++;
     }
 
     table.rows.push_back(values);
-    SaveTableData(table);
+    // SaveTableData(table);
 
     return true;
 }
@@ -179,14 +176,25 @@ bool Database::ParseInsertSQL(std::string sql, std::string& table_name, std::vec
     return true;
 }
 
-bool Database::SelectFromTable(std::string sql){
+bool Database::SelectFromTable(std::string sql, bool all){
     
     std::string table_name;
     std::vector<std::string> columns;
 
-    if(!ParseSelectSQL(sql, table_name, columns)){
+    if(!ParseSelectSQL(sql, table_name, columns, all)){
         std::cout<<"Cannot parse the select query\n";
         return false;
+    }
+
+    auto it = tables.find(table_name);
+    if(it == tables.end()){
+        std::cout<<"Table "<<table_name<<" does not exist\n";
+        return false;
+    }
+
+    if(all){
+        PrintTable(table_name);
+        return true;
     }
 
     Table& table = tables[table_name];
@@ -224,8 +232,16 @@ bool Database::SelectFromTable(std::string sql){
 }
 
 
-bool Database::ParseSelectSQL(std::string sql, std::string& table_name, std::vector<std::string>& columns){
-    
+bool Database::ParseSelectSQL(std::string sql, std::string& table_name, std::vector<std::string>& columns, bool& all){
+
+    std::regex reg1(R"(SELECT \* FROM (\w+);)");
+    std::smatch match1;
+    if(std::regex_match(sql, match1, reg1)){
+        table_name = match1[1];
+        all = true;
+        return true;
+    }
+
     std::regex reg(R"(SELECT (.+) FROM (\w+);)");
     std::smatch match;
 
@@ -245,6 +261,16 @@ bool Database::ParseSelectSQL(std::string sql, std::string& table_name, std::vec
 
     return true;
 }
+
+bool Database::ShowTables(){
+    std::cout<<"Tables in the database are: \n";
+    for(auto& table_data : tables){
+        std::cout<<table_data.first<<std::endl;
+    }
+    return true;
+}
+
+
 void Database::LoadMetaData(){
     file_st.seekg(0, std::ios::beg);
 
@@ -256,8 +282,9 @@ void Database::LoadMetaData(){
 
     std::memcpy(&num_tables, buffer + offset, sizeof(size_t));
     offset += sizeof(size_t);
+    std::cout<<"READ ->"<<num_tables<<std::endl;
 
-    // std::cout<<num_tables<<std::endl;
+    std::vector<Table> tabless;
 
     for(size_t i = 0; i < num_tables; i ++){
         Table table;
@@ -304,18 +331,21 @@ void Database::LoadMetaData(){
 
             table.columns.push_back(column);
         }
-
-        tables[table.name] = table;
-        //table me rows bhr
-        LoadTableData(table);
+        tabless.push_back(table);
     }
 
     std::memcpy(&next_free_page_, buffer, sizeof(size_t));
     offset += sizeof(size_t);
+
+    for(auto& table : tabless){
+        LoadTableData(table);
+        tables[table.name] = table;
+    }
 }
 
 void Database::LoadTableData(Table& table){
     size_t current_page = table.start_page;
+    
     size_t rows_per_page = (PAGE_SIZE - sizeof(PageHeader)) / table.row_size;
     table.rows.clear();
 
@@ -323,13 +353,19 @@ void Database::LoadTableData(Table& table){
         file_st.seekg(current_page * PAGE_SIZE, std::ios::beg);
         char buffer[PAGE_SIZE] = {0};
         file_st.read(buffer, PAGE_SIZE);
+        // for(auto x:buffer){
+        //     std::cout<<x;
+        // }
         size_t offset = sizeof(PageHeader);
 
         PageHeader header;
         std::memcpy(&header, buffer, sizeof(PageHeader));
         current_page = header.next_page;
+        int num_rows = header.num_rows;
+        // std::cout<<"Current page: "<<current_page<<std::endl;
+        // std::cout<<"Num rows: "<<num_rows<<std::endl;
 
-        for(size_t rowidx = 0; rowidx < rows_per_page; rowidx ++){
+        for(size_t rowidx = 0; rowidx < num_rows; rowidx ++){
             if(offset + table.row_size > PAGE_SIZE){
                 break;
             }
@@ -342,10 +378,17 @@ void Database::LoadTableData(Table& table){
                     row.push_back(std::to_string(value));
                 }
                 else{
-                    row.push_back(std::string(buffer + offset, column.size));
+                    size_t row_len;
+                    std::memcpy(&row_len, buffer + offset, sizeof(size_t));
+                    offset += sizeof(size_t);
+                    row.push_back(std::string(buffer + offset, row_len));
                 }
                 offset += column.size;
             }
+            // for(auto x:row){
+            //     std::cout<<x<<"\n";
+            // }
+            // std::cout<<table.name<<std::endl;
 
             table.rows.push_back(row);
         }
@@ -353,10 +396,10 @@ void Database::LoadTableData(Table& table){
 }
 
 void Database::SaveMetaData(){
-    file_st.seekp(0, std::ios::beg);
     char buffer[PAGE_SIZE] = {0};
     size_t offset = 0;
     size_t num_tables = tables.size();
+    std::cout<<"WRITE ->"<<num_tables<<std::endl;
     std::memcpy(buffer + offset, &num_tables, sizeof(size_t));
 
     offset += sizeof(size_t);
@@ -364,8 +407,9 @@ void Database::SaveMetaData(){
     for(const auto& table_data : tables){
         const Table& table = table_data.second;
 
-        // std::cout<<table.name<<" "<<table.start_page<<" "<<table.num_pages<<" "<<table.row_size<<std::endl;
+        std::cout<<table.name<<" "<<table.start_page<<" "<<table.num_pages<<" "<<table.row_size<<std::endl;
         size_t table_name_len = table.name.size();
+        // std::cout<<table_name_len<<std::endl;
         std::memcpy(buffer + offset, &table_name_len, sizeof(size_t));
         offset += sizeof(size_t);
 
@@ -409,7 +453,9 @@ void Database::SaveMetaData(){
     std::memcpy(buffer, &next_free_page_, sizeof(size_t));
     offset += sizeof(size_t);
 
-    file_st = std::fstream(file_name, std::ios::in | std::ios::out | std::ios::binary | std::ios::app);
+    file_st = std::fstream(file_name, std::ios::in | std::ios::out | std::ios::binary);
+    file_st.seekp(0, std::ios::beg);
+
 
     file_st.write(buffer, PAGE_SIZE);
 
@@ -421,19 +467,21 @@ void Database::SaveMetaData(){
 
 void Database::SaveTableData(Table& table){
     size_t current_page = table.start_page;
+    // std::cout<<current_page<<std::endl; 
     size_t rows_per_page = (PAGE_SIZE - sizeof(PageHeader)) / table.row_size;
     // size_t num_pages = (table.rows.size() + rows_per_page - 1) / rows_per_page;
     size_t current_row_idx = 0;
     size_t total_rows = table.rows.size();
 
     while(current_row_idx < total_rows){
-        file_st.seekp(current_page * PAGE_SIZE, std::ios::beg);
+        // file_st.seekp(current_page * PAGE_SIZE, std::ios::beg);
         char buffer[PAGE_SIZE] = {0};
         size_t offset = sizeof(PageHeader); 
 
         size_t end_row = std::min(current_row_idx + rows_per_page, table.rows.size());
 
         for(size_t rowidx = current_row_idx; rowidx < end_row; rowidx ++){
+            // std::cout<<rowidx<<std::endl;
             const auto& row = table.rows[rowidx];
 
             for(size_t colidx = 0; colidx < row.size(); colidx ++){
@@ -445,30 +493,44 @@ void Database::SaveTableData(Table& table){
                     std::memcpy(buffer + offset, &value, column.size);
                 }
                 else{
+                    size_t row_len = row_val.length();
+                    std::memcpy(buffer + offset, &row_len, column.size);
+                    offset += sizeof(size_t);
                     std::memcpy(buffer + offset, row_val.data(), column.size);
                 }
 
                 offset += column.size;
             }
         }
+        // std::cout<<current_row_idx<<" "<<end_row<<std::endl;
 
         PageHeader header;
 
         if(end_row < total_rows){
             header.next_page = next_free_page_;
+            header.num_rows = rows_per_page;
             next_free_page_ ++;
         }
         else{
+            header.num_rows = end_row - current_row_idx;
             header.next_page = 0;
         }
         std::memcpy(buffer, &header, sizeof(PageHeader));
+        // std::cout<<header.num_rows<<std::endl;
+        // std::cout<<header.next_page<<std::endl;
 
-        file_st = std::fstream(file_name, std::ios::in | std::ios::out | std::ios::binary | std::ios::app);
+        // for(auto x:buffer){
+        //     std::cout<<x;
+        // }
+        // std::cout<<std::endl;
 
+        file_st = std::fstream(file_name, std::ios::in | std::ios::out | std::ios::binary);
+        file_st.seekp(current_page * PAGE_SIZE, std::ios::beg);
+        // std::cout<<current_page*PAGE_SIZE<<std::endl;
         file_st.write(buffer, PAGE_SIZE);
 
         if(!file_st){
-            std::cerr << "Write operation failed." << std::endl;
+            std::cout << "Write operation failed." << std::endl;
         }
         current_page = header.next_page;
         current_row_idx = end_row;

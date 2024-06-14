@@ -12,6 +12,7 @@ Database::Database(const std::string &filename){
 Database::~Database(){
     SaveMetaData();
     for(auto& table_data : tables){
+        PrintTable(table_data.second.name);
         SaveTableData(table_data.second);
     }
     file_st.close();
@@ -133,6 +134,8 @@ bool Database::InsertIntoTable(std::string sql){
 
     size_t rows_per_page = (PAGE_SIZE - sizeof(PageHeader)) / table.row_size;
 
+    // have to change the last page header 
+    
     if(!table.rows.empty() && (table.rows.size() % rows_per_page) == 0){
         table.last_page = next_free_page_;
         next_free_page_ ++;
@@ -140,7 +143,7 @@ bool Database::InsertIntoTable(std::string sql){
     }
 
     table.rows.push_back(values);
-    // SaveTableData(table);
+    SaveTableData(table);
 
     return true;
 }
@@ -265,7 +268,7 @@ bool Database::ParseSelectSQL(std::string sql, std::string& table_name, std::vec
 bool Database::ShowTables(){
     std::cout<<"Tables in the database are: \n";
     for(auto& table_data : tables){
-        std::cout<<table_data.first<<std::endl;
+        std::cout<<table_data.first<<" "<<table_data.second.start_page<<std::endl;
     }
     return true;
 }
@@ -472,6 +475,7 @@ void Database::SaveTableData(Table& table){
     // size_t num_pages = (table.rows.size() + rows_per_page - 1) / rows_per_page;
     size_t current_row_idx = 0;
     size_t total_rows = table.rows.size();
+    // std::cout<<"Total rows of table "<<table.name<<" are "<<total_rows<<std::endl;
 
     while(current_row_idx < total_rows){
         // file_st.seekp(current_page * PAGE_SIZE, std::ios::beg);
@@ -490,6 +494,7 @@ void Database::SaveTableData(Table& table){
 
                 if(column.type == "INT"){
                     int value = std::stoi(row_val);
+                    // std::cout<<"Value: "<<value<<std::endl;
                     std::memcpy(buffer + offset, &value, column.size);
                 }
                 else{

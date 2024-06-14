@@ -89,7 +89,6 @@ PrepareResult prepare_insert(InputBuffer& input_buffer, Statement& statement){
     strcpy(statement.row_to_insert.email, email);
 
     return PREPARE_SUCCESS;
-
 }
 
 PrepareResult prepare_statement(InputBuffer& input_buffer, Statement& statement){
@@ -126,7 +125,7 @@ void* get_page(Pager& pager, uint32_t page_num){
 
     if(pager.pages[page_num] == nullptr){
         void* page = malloc(PAGE_SIZE);
-        uint32_t num_pages = pager.file_length;
+        uint32_t num_pages = pager.file_length / PAGE_SIZE;
         
         if(pager.file_length % PAGE_SIZE){
             num_pages++;

@@ -12,13 +12,13 @@ all: $(TARGET)
 	@echo "Executed"
 
 $(TARGET): $(OBJS)
-	@$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+	@$(CXX) $(CXXFLAGS) -w -o $(TARGET) $(OBJS)
 
 main.o: main.cpp
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -c $< -w -o $@
 
 includes/containers.o: includes/containers.cpp
-	@$(CXX) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) -c $< -w -o $@
 
 clean:
 	@rm -f $(OBJS) $(TARGET)

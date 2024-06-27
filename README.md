@@ -3,7 +3,7 @@
  <img width=200px height=200px src="https://i.imgur.com/6wj0hh6.jpg" alt="Project logo"></a> -->
 </p>
 
-<h3 align="center">MicroDB</h3>
+<h1 align="center">MicroDB</h1>
 
 ---
 
@@ -143,7 +143,7 @@ Add additional notes about how to deploy this on a live system. -->
 
 ## ⛏️ Built Using <a name = "built_using"></a>
 
-- [C++](https://www.mongodb.com/) - Database
+- [C++](https://en.cppreference.com/w/)
 <!-- - [Express](https://expressjs.com/) - Server Framework
 - [VueJs](https://vuejs.org/) - Web Framework
 - [NodeJs](https://nodejs.org/en/) - Server Environment -->

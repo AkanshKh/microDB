@@ -68,7 +68,11 @@ make all
 ```
 ./tot [database file name]
 ```
+Here are some example images showing the program under use
 
+![Basic usage](/assets/basic_work.png)
+
+![Internal B+ tree structure](/assets/btree_struct.png)
 
 
 ## 🔧 Running the tests <a name = "tests"></a>

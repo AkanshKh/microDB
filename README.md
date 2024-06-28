@@ -46,13 +46,11 @@ To add persistence we wrote the whole database on a file on the disk and wheneve
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
+Before you begin, ensure you have the following software installed on your system:
 
-What things you need to install the software and how to install them.
-
-```
-[! fill]
-```
-
+- `g++` 
+- `make`
+- `Python`
 ### Installing
 
 Open git bash on your local machine and clone the repository
@@ -75,23 +73,18 @@ make all
 
 ## 🔧 Running the tests <a name = "tests"></a>
 
-Explain how to run the automated tests for this system.
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
+For running the tests, ensure you have python installed and run the script
 ```
-Give an example
+python3 ./tests/main.py
 ```
 
-### And coding style tests
+These tests check if the core functions of the system are working properly.Currently covers the following
 
-Explain what these tests test and why
+1. Running without a specified filename
+1. Running with small dataset
+1. Running with a large dataset
+1. Duplicate key error checking
 
-```
-Give an example
-```
 
 <!-- ## 🎈 Usage <a name="usage"></a>
 

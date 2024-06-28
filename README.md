@@ -56,7 +56,7 @@ Before you begin, ensure you have the following software installed on your syste
 Open git bash on your local machine and clone the repository
 
 ```
-git clone https://github.com/AkanshKh/microDB
+git clone https://github.com/AkanshKh/microDB.git
 ```
 
 After cloning you're ready to go, run these commands on linux (or wsl)

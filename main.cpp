@@ -44,7 +44,7 @@ int main(int argc,char* argv[]){
             continue;
         }
         if(prepared == PREPARE_STRING_TOO_LONG){
-            std::cout<<"Given stuff is toooo long dear\n";
+            std::cout<<"Input Data longer than row size\n";
         }
         if(prepared == PREPARE_UNRECOGNIZED_STATEMENT){
             std::cout<<"Unrecognized Command initials "<<input_buffer->buffer<<std::endl;
@@ -54,13 +54,13 @@ int main(int argc,char* argv[]){
         ExecuteResult executed = execute_statement(statement, *table);
         
         if(executed == EXECUTE_SUCCESS){
-            std::cout<<"SUCCESSSSSSSSSS HEHE YOU GAY\n";
+            std::cout<<"Execution success\n";
         }
         if(executed == EXECUTE_DUPLICATE_KEY){
-            std::cout<<"DUPLICATE KEY dedi madarchod"<<std::endl;
+            std::cout<<"error: Duplicate key found\n";
         }
         if(executed == EXECUTE_TABLE_FULL){
-            std::cout<<"TABLE IS FULL GAY MAN\n";
+            std::cout<<"error: Table full\n";
         }
 
         // std::cout<<"For the input buffer : "<<input_buffer->buffer<<" number of rows are : "<<table->num_rows<<std::endl;

@@ -35,8 +35,6 @@ void read_input(InputBuffer& input_buffer){
     // Remove the newline character 
     input_buffer.buffer_length = bytes_read - 1;
     input_buffer.buffer[bytes_read - 1] = 0;
-
-    std::cout<<input_buffer.buffer<<" "<<input_buffer.buffer_length<<std::endl;
 }
 
 MetaCommandResult do_meta_ccommand(InputBuffer& input_buffer, Table& table){
